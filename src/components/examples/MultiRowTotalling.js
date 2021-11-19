@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useState, useMemo } from 'react'
 import { CollectionView } from '@grapecity/wijmo'
 import { CellTemplateType } from '@grapecity/wijmo.react.grid'
 import {
@@ -15,7 +15,7 @@ const FRUIT_TYPE = Object.freeze({
   DAMSON: 'damson'
 })
 
-const defaultValues = [
+const DEFAULT_INPUT_SOURCE = [
   {
     type: FRUIT_TYPE.APPLE,
     count: 1,
@@ -41,54 +41,67 @@ function FruitTemplate ({ context }) {
   }
 }
 
-function updateTotalCollectionView (totalCollectionView, inputItems) {
-  while (totalCollectionView.items.length > 0) {
-    totalCollectionView.removeAt(0)
-  }
+function useCollectionView (sourceCollection, {
+  onCollectionChanged,
+  onCurrentChanged,
+  onCurrentChanging,
+  onPageChanged,
+  onPageChanging,
+  onSourceCollectionChanged,
+  onSourceCollectionChanging
+} = {}) {
+  return useMemo(() => {
+    const collectionView = new CollectionView(sourceCollection)
 
-  Object.values(inputItems.reduce((result, item) => {
-    const { type, count, price } = item
-    result[type] = result[type] || { type, count: 0, price: 0 }
-    result[type].count += count
-    result[type].price += count * price
-    return result
-  }, {})).forEach(({ type, count, price }) => {
-    const item = totalCollectionView.addNew()
-    item.type = type
-    item.count = count
-    item.price = price
-    totalCollectionView.commitNew()
-  })
+    onCollectionChanged && collectionView.collectionChanged.addHandler(onCollectionChanged, collectionView)
+    onCurrentChanged && collectionView.currentChanged.collectionChanged.addHandler(onCurrentChanged, collectionView)
+    onCurrentChanging && collectionView.currentChanging.collectionChanged.addHandler(onCurrentChanging, collectionView)
+    onPageChanged && collectionView.pageChanged.collectionChanged.addHandler(onPageChanged, collectionView)
+    onPageChanging && collectionView.pageChanging.collectionChanged.addHandler(onPageChanging, collectionView)
+    onSourceCollectionChanged && collectionView.sourceCollectionChanged.collectionChanged.addHandler(onSourceCollectionChanged, collectionView)
+    onSourceCollectionChanging && collectionView.sourceCollectionChanging.collectionChanged.addHandler(onSourceCollectionChanging, collectionView)
+
+    return collectionView
+  }, [sourceCollection])
 }
 
 export default function MultiRowTotalling () {
-  const totalItemsSourceRef = useRef(new CollectionView())
-  const inputItemsSourceRef = useRef((() => {
-    const collectionView = new CollectionView(defaultValues)
+  const [inputItemSource, setInputItemSource] = useState([...DEFAULT_INPUT_SOURCE])
+  const totalItemSource = useMemo(() => {
+    return Object.values(inputItemSource.reduce((result, item) => {
+      const { type, count, price } = item
+      result[type] = result[type] || { type, count: 0, price: 0 }
+      result[type].count += count
+      result[type].price += count * price
+      return result
+    }, {}))
+  }, [inputItemSource])
 
-    collectionView.collectionChanged.addHandler(function () {
-      updateTotalCollectionView(totalItemsSourceRef.current, this.items)
-    }, collectionView)
-    updateTotalCollectionView(totalItemsSourceRef.current, collectionView.items)
+  const inputCollectionView = useCollectionView(inputItemSource, {
+    onCollectionChanged: function () {
+      setInputItemSource([...this.items])
+    }
+  })
 
-    return collectionView
-  })())
+  const totalCollectionView = useCollectionView(totalItemSource)
 
   const handleAddNew = useCallback(() => {
-    const collectionView = inputItemsSourceRef.current
+    const collectionView = inputCollectionView
     const item = collectionView.addNew()
     item.type = FRUIT_TYPE.APPLE
     item.count = 0
     item.price = 0
     collectionView.commitNew()
-  }, [])
+  }, [inputCollectionView])
 
   return (
     <>
       <h1>集計を用いたMultiRow</h1>
       <h2>入力</h2>
-      <button onClick={handleAddNew}>行を追加</button>
-      <MultiRow itemsSource={inputItemsSourceRef.current} allowDelete>
+      <p>
+        <button onClick={handleAddNew}>行を追加</button>
+      </p>
+      <MultiRow itemsSource={inputCollectionView} allowDelete>
         <MultiRowCellGroup colspan={3}>
           <MultiRowCell header="種別" binding="type">
             <MultiRowCellTemplate
@@ -114,7 +127,7 @@ export default function MultiRowTotalling () {
         </MultiRowCellGroup>
       </MultiRow>
       <h2>集計</h2>
-      <MultiRow itemsSource={totalItemsSourceRef.current} isReadOnly>
+      <MultiRow itemsSource={totalCollectionView} isReadOnly>
         <MultiRowCellGroup colspan={3}>
           <MultiRowCell header="種類" binding="type">
             <MultiRowCellTemplate
