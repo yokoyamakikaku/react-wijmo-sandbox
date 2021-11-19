@@ -21,6 +21,9 @@ export default function Home () {
           <li>
             <Link to="/examples/multi_row_totalling">集計を用いたMultiRow</Link>
           </li>
+          <li>
+            <Link to="/examples/multi_row_totalling_with_multi_sources">複数のデータ用いたにした集計を表示するMultiRow</Link>
+          </li>
         </ul>
       </nav>
     </>

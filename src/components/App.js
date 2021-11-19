@@ -6,6 +6,7 @@ import MultiRowStructuredExample from './examples/MultiRowStructured'
 import MultiRowCustomCellExample from './examples/MultiRowCustomCell'
 import MultiRowAsyncResourceExample from './examples/MultiRowAsyncResource'
 import MultiRowTotallingExample from './examples/MultiRowTotalling'
+import MultiRowTotallingWithMultiSources from './examples/MultiRowTotallingWithMultiSources'
 
 export default function App () {
   return (
@@ -18,6 +19,7 @@ export default function App () {
           <Route path="/examples/multi_row_custom_cell" element={<MultiRowCustomCellExample/>}/>
           <Route path="/examples/multi_row_async_resource" element={<MultiRowAsyncResourceExample/>}/>
           <Route path="/examples/multi_row_totalling" element={<MultiRowTotallingExample/>}/>
+          <Route path="/examples/multi_row_totalling_with_multi_sources" element={<MultiRowTotallingWithMultiSources/>}/>
           <Route path="*" element={<Navigate to="/"/>} />
         </Routes>
       </Router>
